@@ -21,7 +21,7 @@ public class BattleHUD : MonoBehaviour
         UpdateBossHUD();
     }
 
-    private void UpdatePlayerHUD()
+    public void UpdatePlayerHUD()
     {
         if (playerHealth != null)
         {

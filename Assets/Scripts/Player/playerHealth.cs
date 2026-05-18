@@ -1,154 +1,99 @@
-using System.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.InputSystem; // Added this to use the New Input System!
 
 public class PlayerHealth : MonoBehaviour
 {
-    [Header("Health Settings")]
     public float maxHealth = 100f;
     private float currentHealth;
-
-    [Header("Healing Settings")]
-    public int maxHeals = 3;
-    public float healCooldown = 30f;
     
-    private int healsRemaining;
-    private float cooldownTimer = 0f;
+    public int maxHealCharges = 3;
+    public int currentHealCharges;
+    public float healAmount = 30f;
+    public float healCooldown = 2f;
+    private float lastHealTime = -Mathf.Infinity;
 
-    [Header("Invulnerability Settings")]
-    public float invulnerabilityDuration = 1.0f;
-    
-    [Header("Model References")]
-    public Transform playerModel; 
-    
-    private Renderer[] targetRenderers;
-    private PlayerMovement playerMovement;
+    public BattleHUD _hudmanager;
 
-    public bool isInvulnerable { get; private set; }
-
-    private void Start()
+    void Start()
     {
         currentHealth = maxHealth;
-        healsRemaining = maxHeals;
-        isInvulnerable = false;
-
-        playerMovement = GetComponent<PlayerMovement>();
-
-        if (playerModel != null)
+        currentHealCharges = maxHealCharges;
+        
+        if (_hudmanager != null)
         {
-            targetRenderers = playerModel.GetComponentsInChildren<Renderer>();
-            
-            if (targetRenderers.Length == 0)
-            {
-                Debug.LogWarning("PlayerHealth: The assigned playerModel has no Renderer components on it or its children.");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("PlayerHealth: No playerModel assigned in the Inspector! The player will not blink when hit.");
+            _hudmanager.UpdatePlayerHUD();
         }
     }
 
-    private void Update()
+    void Update()
     {
-        if (cooldownTimer > 0) cooldownTimer -= Time.deltaTime;
-
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
         {
-            TryHeal();
+            AttemptHeal();
         }
     }
 
-    private void TryHeal()
+    public void TakeDamage(float damageAmount)
     {
-        if (healsRemaining > 0 && cooldownTimer <= 0 && currentHealth < maxHealth)
+        currentHealth -= damageAmount;
+        currentHealth = Mathf.Max(currentHealth, 0); 
+        
+        if (_hudmanager != null)
         {
-            currentHealth += (maxHealth * 0.5f);
-            currentHealth = Mathf.Min(currentHealth, maxHealth);
-
-            healsRemaining--;
-            cooldownTimer = healCooldown;
-            
-            Debug.Log($"Player healed. Current HP: {currentHealth}. Heals remaining: {healsRemaining}");
+            _hudmanager.UpdatePlayerHUD();
         }
-        else if (cooldownTimer > 0)
-        {
-            Debug.Log($"Heal on cooldown. {cooldownTimer:F1} seconds remaining.");
-        }
-        else if (currentHealth >= maxHealth)
-        {
-            Debug.Log("Health is already at maximum.");
-        }
-        else if (healsRemaining <= 0)
-        {
-            Debug.Log("No heals remaining.");
-        }
-    }
-
-    public bool TakeDamage(float amount)
-    {
-        if (isInvulnerable || (playerMovement != null && playerMovement.isDashing) || currentHealth <= 0) 
-        {
-            return false;
-        }
-
-        currentHealth -= amount;
-        Debug.Log($"Player took {amount} damage Current HP: {currentHealth}");
 
         if (currentHealth <= 0)
         {
-            currentHealth = maxHealth;
             HandleDeath();
         }
-        else
-        {
-            StartCoroutine(InvulnerabilityRoutine());
-        }
-
-        return true; 
     }
 
-    private IEnumerator InvulnerabilityRoutine()
+    private void AttemptHeal()
     {
-        isInvulnerable = true;
-        float timer = 0f;
-        float flickerSpeed = 0.1f; 
-
-        while (timer < invulnerabilityDuration)
+        if (currentHealCharges > 0 && Time.time >= lastHealTime + healCooldown && currentHealth < maxHealth)
         {
-            if (targetRenderers != null)
-            {
-                foreach (Renderer r in targetRenderers)
-                {
-                    if (r != null) r.enabled = !r.enabled;
-                }
-            }
+            currentHealth += healAmount;
+            currentHealth = Mathf.Min(currentHealth, maxHealth); 
             
-            yield return new WaitForSeconds(flickerSpeed);
-            timer += flickerSpeed;
-        }
-
-        if (targetRenderers != null)
-        {
-            foreach (Renderer r in targetRenderers)
+            currentHealCharges--;
+            lastHealTime = Time.time;
+            
+            if (_hudmanager != null)
             {
-                if (r != null) r.enabled = true;
+                _hudmanager.UpdatePlayerHUD();
             }
         }
-        isInvulnerable = false;
     }
 
     private void HandleDeath()
     {
-        transform.position = new Vector3(0f, transform.position.y, 0f);
-        Debug.Log($"Health reset to {currentHealth} after death.");
-        
-        CharacterController cc = GetComponent<CharacterController>();
-        if (cc != null) cc.enabled = false;
-        if (cc != null) cc.enabled = true;
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.PlayerDied();
+        }
+        else
+        {
+            Debug.LogError("GameManager is missing from the scene!");
+        }
     }
 
-    public float GetHealthPercentage() => currentHealth / maxHealth;
-    public float GetHealCooldownPercentage() => cooldownTimer > 0 ? cooldownTimer / healCooldown : 0f;
-    public int GetHealsRemaining() => healsRemaining;
+    public float GetHealthPercentage()
+    {
+        return currentHealth / maxHealth;
+    }
+
+    public float GetHealCooldownPercentage()
+    {
+        if (Time.time >= lastHealTime + healCooldown)
+        {
+            return 0f; 
+        }
+        return 1f - ((Time.time - lastHealTime) / healCooldown);
+    }
+
+    public int GetHealsRemaining()
+    {
+        return currentHealCharges;
+    }
 }

@@ -8,7 +8,7 @@ public class Hurtbox : MonoBehaviour
     
     public bool destroyOnContact = false;
 
-    private void OnTriggerStay(Collider other)
+   private void OnTriggerStay(Collider other)
     {
         if (!isActive) return;
 
@@ -18,9 +18,9 @@ public class Hurtbox : MonoBehaviour
             
             if (playerHealth != null)
             {
-                bool damageDealt = playerHealth.TakeDamage(damage);
+                playerHealth.TakeDamage(damage);
 
-                if (damageDealt && destroyOnContact)
+                if (destroyOnContact)
                 {
                     Destroy(gameObject);
                 }
