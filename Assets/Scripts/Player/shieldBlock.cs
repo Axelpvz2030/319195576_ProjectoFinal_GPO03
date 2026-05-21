@@ -6,6 +6,13 @@ public class ShieldBlock : MonoBehaviour
     public float knockbackForce = 15f;
     public float knockbackTime = 0.15f;
 
+    [Header("Audio")]
+    public AudioSource audioSource;
+    public AudioClip shieldSound;
+
+    [Header("VFX")]
+    public ParticleSystem blockParticles;
+
     private PlayerMovement playerMovement;
 
     private void Start()
@@ -21,6 +28,16 @@ public class ShieldBlock : MonoBehaviour
         {
             Debug.Log("Shield blocked a projectile!");
 
+            if (audioSource != null && shieldSound != null)
+            {
+                audioSource.PlayOneShot(shieldSound);
+            }
+
+            if (blockParticles != null)
+            {
+                blockParticles.Play();
+            }
+
             if (playerMovement != null)
             {
                 Vector3 pushDirection = (playerMovement.transform.position - other.transform.position).normalized;
@@ -31,7 +48,7 @@ public class ShieldBlock : MonoBehaviour
                 playerMovement.ApplyKnockback(pushDirection, knockbackForce, knockbackTime);
             }
 
-            Destroy(other.gameObject);
+            other.gameObject.SetActive(false);
         }
     }
 }

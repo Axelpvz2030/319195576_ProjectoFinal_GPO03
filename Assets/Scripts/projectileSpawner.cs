@@ -3,17 +3,19 @@ using System.Collections.Generic;
 
 public class ProjectileSpawner : MonoBehaviour
 {
-    [Header("Spawner Settings")]
     public bool isActive = true; 
     public float spawnTime = 1f;
     public GameObject projectileModel;
     public GameObject projectilePrefab;
 
-    [Header("Pool Settings")]
     public int poolSize = 10;
     private List<GameObject> projectilePool;
 
     private float currentTimer = 0f;
+
+    [Header("Audio")]
+    public AudioSource audioSource;
+    public AudioClip shootSound;
 
     private void Start()
     {
@@ -74,6 +76,17 @@ public class ProjectileSpawner : MonoBehaviour
                 projectile.transform.position = transform.position;
                 projectile.transform.rotation = transform.rotation;
                 projectile.SetActive(true);
+                
+                if (audioSource != null && shootSound != null)
+                {
+                    audioSource.PlayOneShot(shootSound);
+                }
+
+                Hurtbox[] hurtboxes = projectile.GetComponentsInChildren<Hurtbox>(true);
+                foreach (Hurtbox hurtbox in hurtboxes)
+                {
+                    hurtbox.gameObject.SetActive(true);
+                }
                 
                 ProjectileMovement movement = projectile.GetComponent<ProjectileMovement>();
                 if (movement != null)

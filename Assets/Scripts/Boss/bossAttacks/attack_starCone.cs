@@ -45,6 +45,8 @@ public class Attack_StarCone : BossAttack
                 float randomOffset = Random.Range(-spreadAngle, spreadAngle);
                 spawner.transform.localRotation = originalLocalRotation * Quaternion.Euler(0f, randomOffset, 0f);
                 spawner.SetSpawnerActive(true);
+
+                
             }
 
             yield return new WaitForSeconds(timeBetweenShots);

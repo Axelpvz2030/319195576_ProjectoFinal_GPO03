@@ -25,6 +25,13 @@ public class PlayerMovement : MonoBehaviour
     [Header("Components")]
     public Transform model;
     public Animator animator; 
+
+    [Header("Audio")]
+    public AudioSource audioSource;
+    public AudioClip dashSound;
+
+    [Header("VFX")]
+    public ParticleSystem dashTrailParticles;
     
     [Header("State")]
     public bool canMove = true;
@@ -133,6 +140,16 @@ public class PlayerMovement : MonoBehaviour
             isDashing = true;
             dashTimer = dashDuration;
             currentCooldown = dashCooldown; 
+
+            if (audioSource != null && dashSound != null)
+            {
+                audioSource.PlayOneShot(dashSound);
+            }
+
+            if (dashTrailParticles != null)
+            {
+                dashTrailParticles.Play();
+            }
         }
     }
 
@@ -159,7 +176,16 @@ public class PlayerMovement : MonoBehaviour
         {
             finalMovement = dashDirection * dashForce;
             dashTimer -= Time.deltaTime;
-            if (dashTimer <= 0) isDashing = false;
+            
+            if (dashTimer <= 0) 
+            {
+                isDashing = false;
+                
+                if (dashTrailParticles != null)
+                {
+                    dashTrailParticles.Stop();
+                }
+            }
         }
         else
         {
@@ -197,8 +223,6 @@ public class PlayerMovement : MonoBehaviour
 
             if (transform.position.y < lowestPoint - fallThreshold)
             {
-                Debug.Log("Player fell out of bounds!");
-
                 controller.enabled = false;
                 
                 transform.position = new Vector3(arenaBounds.bounds.center.x, arenaBounds.bounds.max.y + 1f, arenaBounds.bounds.center.z);

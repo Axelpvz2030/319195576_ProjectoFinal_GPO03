@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems; 
 
 public class PlayerAttack : MonoBehaviour
 {
@@ -10,6 +11,10 @@ public class PlayerAttack : MonoBehaviour
     
     [Header("Components")]
     public Animator animator; 
+
+    [Header("Audio")]
+    public AudioSource audioSource;
+    public AudioClip slashSound;
 
     public bool isAttacking = false; 
     private PlayerMovement playerMovement;
@@ -26,6 +31,11 @@ public class PlayerAttack : MonoBehaviour
 
     private void Update()
     {
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        {
+            return; 
+        }
+
         bool isShielding = (playerMovement != null && playerMovement.isShielding);
 
         if (!isAttacking && !isShielding && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
@@ -38,6 +48,11 @@ public class PlayerAttack : MonoBehaviour
     {
         isAttacking = true;
         
+        if (audioSource != null && slashSound != null)
+        {
+            audioSource.PlayOneShot(slashSound);
+        }
+
         if (playerMovement != null) playerMovement.canMove = false;
         if (attackHurtbox != null) attackHurtbox.SetActive(true);
 
@@ -47,7 +62,7 @@ public class PlayerAttack : MonoBehaviour
 
         if (attackHurtbox != null) attackHurtbox.SetActive(false);
         if (playerMovement != null) playerMovement.canMove = true;
-        
+
         isAttacking = false;
     }
 }

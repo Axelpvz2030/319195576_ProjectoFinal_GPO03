@@ -1,5 +1,6 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // Added this to use the New Input System!
+using System.Collections;
+using UnityEngine.InputSystem; 
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -12,7 +13,21 @@ public class PlayerHealth : MonoBehaviour
     public float healCooldown = 2f;
     private float lastHealTime = -Mathf.Infinity;
 
+    public float invulnerabilityTime = 1.5f;
+    private bool isInvulnerable = false;
+    
+    public GameObject playerModel; 
+    public float flashInterval = 0.1f;
+
     public BattleHUD _hudmanager;
+
+    [Header("Audio")]
+    public AudioSource audioSource;
+    public AudioClip hurtSound;
+    public AudioClip healSound;
+
+    [Header("VFX")]
+    public ParticleSystem healParticles;
 
     void Start()
     {
@@ -35,9 +50,16 @@ public class PlayerHealth : MonoBehaviour
 
     public void TakeDamage(float damageAmount)
     {
+        if (isInvulnerable || currentHealth <= 0) return;
+
         currentHealth -= damageAmount;
         currentHealth = Mathf.Max(currentHealth, 0); 
         
+        if (audioSource != null && hurtSound != null)
+        {
+            audioSource.PlayOneShot(hurtSound);
+        }
+
         if (_hudmanager != null)
         {
             _hudmanager.UpdatePlayerHUD();
@@ -47,6 +69,37 @@ public class PlayerHealth : MonoBehaviour
         {
             HandleDeath();
         }
+        else
+        {
+            StartCoroutine(InvulnerabilityRoutine());
+        }
+    }
+
+    private IEnumerator InvulnerabilityRoutine()
+    {
+        isInvulnerable = true;
+        
+        float timer = 0f;
+        bool isVisible = true;
+
+        while (timer < invulnerabilityTime)
+        {
+            if (playerModel != null)
+            {
+                isVisible = !isVisible;
+                playerModel.SetActive(isVisible);
+            }
+
+            yield return new WaitForSeconds(flashInterval);
+            timer += flashInterval;
+        }
+
+        if (playerModel != null)
+        {
+            playerModel.SetActive(true);
+        }
+
+        isInvulnerable = false;
     }
 
     private void AttemptHeal()
@@ -58,6 +111,16 @@ public class PlayerHealth : MonoBehaviour
             
             currentHealCharges--;
             lastHealTime = Time.time;
+
+            if (audioSource != null && healSound != null)
+            {
+                audioSource.PlayOneShot(healSound);
+            }
+
+            if (healParticles != null)
+            {
+                healParticles.Play();
+            }
             
             if (_hudmanager != null)
             {
@@ -71,10 +134,6 @@ public class PlayerHealth : MonoBehaviour
         if (GameManager.Instance != null)
         {
             GameManager.Instance.PlayerDied();
-        }
-        else
-        {
-            Debug.LogError("GameManager is missing from the scene!");
         }
     }
 

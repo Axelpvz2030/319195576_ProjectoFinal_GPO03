@@ -7,6 +7,10 @@ public class BossHealth : MonoBehaviour
     public float damagePerHit = 10f;
     public bool canBeHarmed = true;
 
+    [Header("Audio")]
+    public AudioSource audioSource;
+    public AudioClip hurtSound;
+
     private void Start()
     {
         currentHealth = maxHealth;
@@ -19,6 +23,11 @@ public class BossHealth : MonoBehaviour
 
         currentHealth -= damagePerHit;
         canBeHarmed = false; 
+
+        if (audioSource != null && hurtSound != null)
+        {
+            audioSource.PlayOneShot(hurtSound);
+        }
         
         BossAI ai = GetComponent<BossAI>();
 

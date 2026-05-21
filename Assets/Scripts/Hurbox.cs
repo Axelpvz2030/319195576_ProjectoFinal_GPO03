@@ -14,11 +14,17 @@ public class Hurtbox : MonoBehaviour
 
         if (other.CompareTag("Player"))
         {
+            PlayerMovement playerMovement = other.GetComponent<PlayerMovement>();
+            
+            if (playerMovement != null && playerMovement.isDashing)
+            {
+                return;
+            }
+
             PlayerHealth playerHealth = other.GetComponent<PlayerHealth>();
             
             if (playerHealth != null)
             {
-  
                 playerHealth.TakeDamage(damage);
 
                 if (destroyOnContact)
